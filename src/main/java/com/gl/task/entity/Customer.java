@@ -25,7 +25,4 @@ public class Customer {
 
     @Enumerated(EnumType.STRING)
     private VerificationStatus verificationStatus;
-
-//    private Instant createdAt;
-
 }
