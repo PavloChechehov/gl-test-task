@@ -9,7 +9,9 @@ import com.gl.task.util.CustomerMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.Optional;
 
 @RestController
@@ -23,9 +25,8 @@ public class CustomerController {
     }
 
     @PostMapping
-    public ResponseEntity<CustomerResponse> registerNewCustomer(@RequestBody CustomerRequest customerRequest
-//                                                    UriComponentsBuilder ucb
-    ) {
+    public ResponseEntity<CustomerResponse> registerNewCustomer(@RequestBody CustomerRequest customerRequest,
+                                                    UriComponentsBuilder ucb) {
         if (customerService.existCustomer(customerRequest.email())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
@@ -33,17 +34,12 @@ public class CustomerController {
         Customer savedCustomer = customerService.register(customerRequest);
         CustomerResponse response = CustomerMapper.toResponse(savedCustomer);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        URI customerLocationURI = ucb
+                .path("customers/{id}")
+                .buildAndExpand(savedCustomer.getId())
+                .toUri();
 
-// I was thinking about this approach for returning response when customer was created.
-// This is POST Http convention to return the CREATED status code and URI to request the new created object
-
-//        URI customerLocationURI = ucb
-//                .path("customers/{id}")
-//                .buildAndExpand(savedCustomer.getId())
-//                .toUri();
-//
-//        return ResponseEntity.created(customerLocationURI).build();
+        return ResponseEntity.created(customerLocationURI).body(response);
     }
 
     @GetMapping("/{id}")

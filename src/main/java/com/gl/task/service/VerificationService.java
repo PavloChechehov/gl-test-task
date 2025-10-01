@@ -23,7 +23,6 @@ public class VerificationService {
         this.verificationUrl = verificationUrl;
     }
 
-    @Async
     public CompletableFuture<VerificationStatus> verify(String email) {
         return CompletableFuture.supplyAsync(() -> {
             Map<String, String> payload = Map.of("email", email);

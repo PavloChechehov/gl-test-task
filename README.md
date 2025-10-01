@@ -10,6 +10,7 @@ Key features:
 - Input validation (Jakarta Validation)
 - Asynchronous background identity verification that updates `verificationStatus` in the customers table
 - Outbound HTTP call to a mock verification service (Postman mock server)
+- Support the Github CI workflow
 
 ## Requirements
 - Java 17+
@@ -18,14 +19,44 @@ Key features:
 ## Setup
 1. Build:
    ```bash
+    export EXTERNAL_VERIFICATION_URL=put_correct_mock_server
    ./gradlew build
+   ```
 2. Run tests:
     ```bash
    ./gradlew test
+   ```
+## Run with docker
+1. Build: 
+   ```bash
+   docker build -t spring-app .
+   ```
+2. Run app:
+   ```bash
+   docker run -p 8080:8080 \
+   -e EXTERNAL_VERIFICATION_URL=put_correct_mock_server \
+   spring-app
+   ```
 
+3. Create new customer:
+   ```bash
+   curl -X POST http://localhost:8080/customers \
+   -u pavlo:abc123 \
+   -H "Content-Type: application/json" \
+   -d '{
+    "firstName": "Pavlo",
+    "lastName": "Che",
+    "email": "example1@gmail.com"
+   }'
+   ```
+4. Find customer by id
+   ```bash
+   curl -X GET http://localhost:8080/customers/1 \
+   -u pavlo:abc123
+   ```
 
 ## Room for improvements
-1. Normalize the customers table: customers and verification status:
+1. Normalize the customers table by splitting it into customers and customer_verifications tables:
    ```sql
    CREATE TABLE customers
    (
@@ -43,7 +74,13 @@ Key features:
         FOREIGN KEY (customer_id) REFERENCES customers(id)
     );
     ```
-   In case, we need the historical verification data, how the verification status is changing and when.
-In that scenario, it is good idea to split the customers table to the customers and customer_verifications. 
-However, there're pros and cons: 
+If we need to keep historical verification data (e.g., track how and when the verification status changes), 
+it’s a good idea to separate the customers table from the customer_verifications table.
 
+2. Use WebClient for reactive communication with downstream services.
+   In our case, the mock server is responsible for email verification, and using WebClient would allow for fully non-blocking, asynchronous calls.
+
+3. Introduce a users table (e.g., with login, role) to support proper authentication and authorization.
+   Additionally, consider integrating OAuth2 or JWT tokens for more secure and scalable authentication.
+4. Use a mapping library (e.g., MapStruct) to handle entity-to-DTO and DTO-to-entity conversions automatically.
+   This improves maintainability and reduces boilerplate code.

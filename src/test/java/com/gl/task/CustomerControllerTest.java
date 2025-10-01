@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 
@@ -29,7 +30,6 @@ public class CustomerControllerTest {
     private VerificationService verificationService;
 
     @Test
-//    @DirtiesContext
     void shouldRegisterANewCustomer() {
 
         Mockito.when(verificationService.verify("example2@gmail.com")).thenReturn(CompletableFuture.completedFuture(VerificationStatus.VERIFIED));
@@ -46,6 +46,26 @@ public class CustomerControllerTest {
 
         assertThat(email).isEqualTo("example2@gmail.com");
         assertThat(verificationStatus).isEqualTo(VerificationStatus.VERIFIED.toString());
+    }
+
+    @Test
+    @DirtiesContext
+    void shouldRegisterCustomerWithFailedStatus() {
+
+        Mockito.when(verificationService.verify("example2@gmail.com")).thenReturn(CompletableFuture.completedFuture(VerificationStatus.FAILED));
+        CustomerRequest customerRequest = new CustomerRequest("Pavlo", "Che", "example2@gmail.com");
+
+        ResponseEntity<String> createResponse = restTemplate
+                .withBasicAuth("pavlo", "abc123")
+                .postForEntity("/customers", customerRequest, String.class);
+        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        DocumentContext documentContext = JsonPath.parse(createResponse.getBody());
+        String email = documentContext.read("$.email");
+        String verificationStatus = documentContext.read("$.status");
+
+        assertThat(email).isEqualTo("example2@gmail.com");
+        assertThat(verificationStatus).isEqualTo(VerificationStatus.FAILED.toString());
     }
 
     @Test
