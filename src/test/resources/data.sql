@@ -1,0 +1,1 @@
+INSERT INTO customers(first_name, last_name, email, verification_status) values ('Pavlo', 'Che', 'example@gmail.com', 'PENDING')
